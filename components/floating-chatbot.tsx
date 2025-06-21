@@ -17,6 +17,8 @@ import {
   CreditCard,
   History,
   Settings,
+  Mic,
+  MicOff,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -39,6 +41,9 @@ export function FloatingChatbot() {
     },
   ])
   const [inputValue, setInputValue] = useState("")
+  const [isRecording, setIsRecording] = useState(false)
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([])
 
   const quickActions = [
     { icon: <CreditCard className="h-4 w-4" />, text: "Faire un paiement", action: "payment" },
@@ -46,6 +51,60 @@ export function FloatingChatbot() {
     { icon: <Settings className="h-4 w-4" />, text: "Paramètres du compte", action: "settings" },
     { icon: <HelpCircle className="h-4 w-4" />, text: "Aide et support", action: "help" },
   ]
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          setAudioChunks((prev) => [...prev, event.data])
+        }
+      }
+
+      recorder.onstop = () => {
+        // Simulate voice-to-text conversion
+        setTimeout(() => {
+          const voiceMessage = "Quel est mon solde actuel ?" // Simulated transcription
+          setInputValue(voiceMessage)
+          setIsRecording(false)
+        }, 1000)
+
+        // Stop all tracks
+        stream.getTracks().forEach((track) => track.stop())
+      }
+
+      setMediaRecorder(recorder)
+      recorder.start()
+      setIsRecording(true)
+      setAudioChunks([])
+
+      // Auto-stop after 10 seconds
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          recorder.stop()
+        }
+      }, 10000)
+    } catch (error) {
+      console.error("Error accessing microphone:", error)
+      alert("Impossible d'accéder au microphone. Veuillez vérifier les permissions.")
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop()
+    }
+  }
+
+  const handleVoiceInput = () => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      startRecording()
+    }
+  }
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return
@@ -213,25 +272,50 @@ export function FloatingChatbot() {
             </div>
           </div>
 
-          {/* Input */}
+          {/* Input with Voice */}
           <div className="p-4 border-t">
             <div className="flex space-x-2">
               <Input
-                placeholder="Tapez votre message..."
+                placeholder={isRecording ? "Enregistrement en cours..." : "Tapez votre message..."}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 className="flex-1 text-sm"
+                disabled={isRecording}
               />
               <Button
+                onClick={handleVoiceInput}
+                variant={isRecording ? "destructive" : "outline"}
+                size="icon"
+                className="h-10 w-10"
+              >
+                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              <Button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || isRecording}
                 size="icon"
                 className="bg-[#E2211C] hover:bg-[#C11E18] h-10 w-10"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </div>
+            {isRecording && (
+              <div className="mt-2 flex items-center justify-center">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <div
+                    className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                    style={{ animationDelay: "0.4s" }}
+                  ></div>
+                </div>
+                <span className="ml-2 text-xs text-red-600">Enregistrement...</span>
+              </div>
+            )}
           </div>
         </CardContent>
       )}
