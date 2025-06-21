@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from app.main import app
+from chatbot import ask_assistant
 
-# Keep the old main.py structure for compatibility
+app = FastAPI()
+
 class AskRequest(BaseModel):
     message: str
 
-# This is now handled by the new app structure
-# The /ask endpoint is included in app/main.py for backward compatibility
+@app.post("/ask")
+def ask_chatbot(req: AskRequest):
+    return {"response": ask_assistant(req.message)}

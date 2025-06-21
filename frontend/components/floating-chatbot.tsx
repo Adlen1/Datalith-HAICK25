@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,7 @@ import {
   Settings,
 } from "lucide-react"
 import Image from "next/image"
+import { apiClient } from "@/lib/api"
 
 interface Message {
   id: string
@@ -39,6 +40,7 @@ export function FloatingChatbot() {
     },
   ])
   const [inputValue, setInputValue] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   const quickActions = [
     { icon: <CreditCard className="h-4 w-4" />, text: "Faire un paiement", action: "payment" },
@@ -47,8 +49,8 @@ export function FloatingChatbot() {
     { icon: <HelpCircle className="h-4 w-4" />, text: "Aide et support", action: "help" },
   ]
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -58,58 +60,62 @@ export function FloatingChatbot() {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    const currentInput = inputValue
     setInputValue("")
+    setIsLoading(true)
 
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      // Try the new AI chat endpoint first
+      const response = await apiClient.chatWithBot(currentInput) as { data?: { response?: string } }
+      
+      let botContent = "Je suis désolé, je ne peux pas répondre pour le moment. Veuillez réessayer plus tard."
+      
+      if (response.data?.response) {
+        botContent = response.data.response
+      } else {
+        // Fallback to legacy endpoint
+        const legacyResponse = await apiClient.askChatbot(currentInput) as { data?: { response?: string } }
+        if (legacyResponse.data?.response) {
+          botContent = legacyResponse.data.response
+        }
+      }
+
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         type: "bot",
-        content: getBotResponse(inputValue),
+        content: botContent,
         timestamp: new Date(),
       }
+      
       setMessages((prev) => [...prev, botResponse])
-    }, 1000)
+    } catch (error) {
+      console.error('Chat error:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "bot",
+        content: "Je rencontre des difficultés techniques. Veuillez réessayer dans quelques instants.",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const getBotResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase()
-
-    if (input.includes("solde") || input.includes("balance")) {
-      return "Votre solde actuel est de 125,750.00 DZD. Souhaitez-vous voir plus de détails sur votre compte ?"
-    }
-    if (input.includes("paiement") || input.includes("payer")) {
-      return "Je peux vous aider à effectuer un paiement. Voulez-vous payer une facture ou faire un virement ?"
-    }
-    if (input.includes("historique") || input.includes("transaction")) {
-      return "Vous pouvez consulter votre historique de transactions dans la section 'Historique'. Voulez-vous que je vous y dirige ?"
-    }
-    if (input.includes("aide") || input.includes("help")) {
-      return "Je suis là pour vous aider ! Vous pouvez me poser des questions sur vos comptes, transactions, ou utiliser les actions rapides ci-dessous."
+  const handleQuickAction = async (action: string) => {
+    const actionQueries = {
+      payment: "Comment puis-je faire un paiement ou un virement ?",
+      history: "Comment consulter mon historique de transactions ?",
+      settings: "Comment modifier mes paramètres de compte ?",
+      help: "J'ai besoin d'aide avec mon compte SATIM Pay",
     }
 
-    return "Je comprends votre demande. Pour une assistance plus détaillée, vous pouvez utiliser les actions rapides ou contacter notre support client."
-  }
-
-  const handleQuickAction = (action: string) => {
-    const actionMessages = {
-      payment:
-        "Je vous redirige vers la page de paiement. Vous pourrez y effectuer des virements ou payer des factures en toute sécurité.",
-      history:
-        "Voici le lien vers votre historique de transactions où vous pouvez consulter toutes vos opérations récentes.",
-      settings:
-        "Accédez à vos paramètres de compte pour modifier vos informations personnelles et préférences de sécurité.",
-      help: "Notre centre d'aide contient des guides détaillés. Vous pouvez aussi contacter notre support 24/7 au +213 21 XX XX XX.",
+    const query = actionQueries[action as keyof typeof actionQueries]
+    if (query) {
+      setInputValue(query)
+      // Auto-send the message
+      setTimeout(() => handleSendMessage(), 100)
     }
-
-    const botMessage: Message = {
-      id: Date.now().toString(),
-      type: "bot",
-      content: actionMessages[action as keyof typeof actionMessages],
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, botMessage])
   }
 
   if (!isOpen) {
@@ -191,6 +197,20 @@ export function FloatingChatbot() {
                   </div>
                 </div>
               ))}
+              {isLoading && (
+                <div className="flex items-start space-x-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100">
+                    <Bot className="h-4 w-4 text-[#E2211C]" />
+                  </div>
+                  <div className="max-w-[70%] p-3 rounded-lg bg-gray-100 text-gray-900">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
 
@@ -205,6 +225,7 @@ export function FloatingChatbot() {
                   size="sm"
                   onClick={() => handleQuickAction(action.action)}
                   className="justify-start text-xs h-8 px-2"
+                  disabled={isLoading}
                 >
                   {action.icon}
                   <span className="ml-1 truncate">{action.text}</span>
@@ -222,10 +243,11 @@ export function FloatingChatbot() {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 className="flex-1 text-sm"
+                disabled={isLoading}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || isLoading}
                 size="icon"
                 className="bg-[#E2211C] hover:bg-[#C11E18] h-10 w-10"
               >
@@ -238,3 +260,4 @@ export function FloatingChatbot() {
     </Card>
   )
 }
+
