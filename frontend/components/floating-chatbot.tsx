@@ -17,8 +17,6 @@ import {
   CreditCard,
   History,
   Settings,
-} from "lucide-reac  Mic,
-  MicOff,
 } from "lucide-react"
 import Image from "next/image"
 import { apiClient } from "@/lib/api"
@@ -236,25 +234,17 @@ export function FloatingChatbot() {
             </div>
           </div>
 
-          {/* Input with Voice */}
+          {/* Input */}
           <div className="p-4 border-t">
             <div className="flex space-x-2">
               <Input
-                placeholder={isRecording ? "Enregistrement en cours..." : "Tapez votre message..."}
+                placeholder="Tapez votre message..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 className="flex-1 text-sm"
                 disabled={isLoading}
               />
-              <Button
-                onClick={handleVoiceInput}
-                variant={isRecording ? "destructive" : "outline"}
-                size="icon"
-                className="h-10 w-10"
-              >
-                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
@@ -264,19 +254,10 @@ export function FloatingChatbot() {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            {isRecording && (
-              <div className="mt-2 flex items-center justify-center">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <div
-                    className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
-                    style={{ animationDelay: "0.4s" }}
-                  ></div>
-                </div>
-                <span className="ml-2 text-xs text-red-600">Enregistrement...</span>
-              </div>
-            )}
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  )
+}
+
