@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Shield, Smartphone, CreditCard, BarChart3, Bell, Fingerprint, Eye, Zap, Lock } from "lucide-react"
+import { ArrowRight, Shield, Smartphone, CreditCard, BarChart3, Bell, Fingerprint, Zap, Lock } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { FloatingChatbot } from "@/components/floating-chatbot"
@@ -40,8 +40,16 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Image src="/satim-logo.png" alt="SATIM" width={40} height={40} className="rounded-lg" />
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-lg flex items-center justify-center">
+              <Image
+                src="/satim-logo.png"
+                alt="SATIM"
+                width={48}
+                height={48}
+                className="w-full h-full object-contain"
+              />
+            </div>
             <div>
               <span className="text-xl font-bold text-gray-900">SATIM Pay</span>
               <p className="text-xs text-gray-600 hidden md:block">
@@ -62,13 +70,8 @@ export default function HomePage() {
           </nav>
           <div className="flex items-center space-x-3">
             <Link href="/auth">
-              <Button variant="outline" className="hidden sm:inline-flex">
+              <Button className="bg-[#E2211C] hover:bg-[#C11E18] px-6 py-2">
                 Connexion
-              </Button>
-            </Link>
-            <Link href="/auth">
-              <Button className="bg-[#E2211C] hover:bg-[#C11E18]">
-                Commencer
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -100,10 +103,6 @@ export default function HomePage() {
                 Essayer Maintenant
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-3">
-              <Eye className="mr-2 h-5 w-5" />
-              Voir la Démo
-            </Button>
           </div>
         </div>
       </section>
@@ -259,7 +258,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4">
+      <footer id="contact" className="bg-gray-900 text-white py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
